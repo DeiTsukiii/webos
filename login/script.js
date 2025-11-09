@@ -30,7 +30,8 @@ async function sendCommand(activeLine, fullCommand) {
     } else if (currentState === 'username') {
         storedUsername = textCommand;
         currentState = 'password';
-        askFor("password: ", true);
+        // ask for username@webos's password
+        askFor(`${storedUsername}@webos's password: `, true);
 
     } else if (currentState === 'password') {
         const storedPassword = textCommand;
@@ -106,7 +107,7 @@ function resetToCommand() {
     isBusy = false;
     storedCommand = '';
     storedUsername = '';
-    askFor("command (login/register): ");
+    askFor("type (login/register): ");
 }
 
 function updateCursor(command) {
@@ -169,5 +170,5 @@ function handleConsoleKeydown(event) {
 }
 
 document.addEventListener('keydown', handleConsoleKeydown);
-content.innerHTML = '<span class="line">WebOS 1.0.0 LTS tty1</span>';
+content.innerHTML = '<span class="line"><span class="green2">user@pc</span>:<span class="green2">~</span>$ <span class="input">ssh webos.deitsuki.games</span></span>';
 resetToCommand();

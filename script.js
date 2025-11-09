@@ -65,10 +65,27 @@ function ansiToHtml(lines) {
     });
 }
 
+function resolvePath(current, target) {
+    const normalizedTargetPath = target.replace('~', '/home/user');
+
+    const baseParts = current.split('/').filter(p => p.length > 0);
+    const targetParts = normalizedTargetPath.split('/').filter(p => p.length > 0);
+    const resolvedParts = normalizedTargetPath.startsWith('/') ? [] : [...baseParts];
+
+    for (const part of targetParts) {
+        if (part === '..' && resolvedParts.length > 0) resolvedParts.pop();
+        else if (!['..', '.'].includes(part)) resolvedParts.push(part);
+    }
+    
+    return '/' + resolvedParts.join('/');
+}
+
 function getCtx() {
     return {
-        currentPath,
-        myUsername
+        set currentPath (newPath) { currentPath = newPath; },
+        get currentPath () { return currentPath; },
+        myUsername,
+        resolvePath: (target) => resolvePath(currentPath, target),
     };
 }
 
@@ -160,10 +177,16 @@ async function sendCommand(activeLine, fullCommand) {
     if (cursor) cursor.remove();
     fullCommand.textContent = textCommand;
 
+
+    content.innerHTML += `<span class="line active" id="line-wait"><span class="input"><span class="cursor"></span></span></span>`;
+    location.href = '#down';
+
     const executedCommand = await executeCommand(cmdName, operands, flags, redirectToFile, appendMode);
+
+    document.getElementById('line-wait').remove();
     if (textCommand && executedCommand.length) content.innerHTML += `<span class="line">${executedCommand}</span>`;
 
-    content.innerHTML += `<span class="line active">${ansiToHtml(`\e[92muser@fedora\e[0m:\e[92m${currentPath.replace(`/home/${myUsername}`, '~')}\e[0m$`)} <span class="input"><span class="cursor"></span></span></span>`;
+    content.innerHTML += `<span class="line active">${ansiToHtml(`\e[92m${myUsername}@webos\e[0m:\e[92m${currentPath.replace(`/home/${myUsername}`, '~')}\e[0m$`)} <span class="input"><span class="cursor"></span></span></span>`;
     location.href = '#down';
 }
 
@@ -234,5 +257,5 @@ function handleConsoleKeydown(event) {
 
 document.addEventListener('keydown', handleConsoleKeydown);
 initShell().then(() => {
-    content.innerHTML = `<span class="line active">${ansiToHtml(`\e[92muser@fedora\e[0m:\e[92m${currentPath.replace(`/home/${myUsername}`, '~')}\e[0m$`)} <span class="input"><span class="cursor"></span></span></span>`;
+    content.innerHTML = `<span class="line active">${ansiToHtml(`\e[92m${myUsername}@webos\e[0m:\e[92m${currentPath.replace(`/home/${myUsername}`, '~')}\e[0m$`)} <span class="input"><span class="cursor"></span></span></span>`;
 });
