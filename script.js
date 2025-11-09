@@ -1,3 +1,5 @@
+import { commands } from "./bin/all.js";
+
 const content = document.getElementById('content');
 let cursorPosition = 0;
 let currentPath = "/home/user";
@@ -63,9 +65,90 @@ function ansiToHtml(lines) {
     });
 }
 
-function sendCommand(activeLine, fullCommand) {
+function getCtx() {
+    return {
+        currentPath,
+        myUsername
+    };
+}
+
+async function executeCommand(command, operands, flags, redirectToFile, appendMode) {
+    const commandPath = `/bin/${command}`;
+
+    let result = `bash: ${command}: command not found...`;
+
+    if (commands[command]) {
+        result = await commands[command]({ operands, flags, ctx: getCtx(), token: (new URLSearchParams(window.location.search)).get('user') });
+    }
+
+    // if (redirectToFile) {
+    //     const resolveRedirect = resolvePath(currentPath, redirectToFile);
+    //     const parentSplit = resolveRedirect.split('/')
+    //     parentSplit.pop();
+    //     const parentPath = parentSplit.join('/');
+    //     const readedParent = readPath(parentPath);
+    //     if (readedParent.error) return readedParent.error === 'fileNotExist' ? `bash: ${redirectToFile}: No such file or directory` : readedParent.error;
+    //     else if (readedParent.perms && readedParent.perms[0] !== 'd') return `bash: ${redirectToFile}: Not a directory`;
+    //     const writedFile = writeFile(resolveRedirect, result, appendMode ? 'w+' : 'w');
+    //     if (writedFile.error) return writedFile.error === 'notAFile' ? `bash: ${redirectToFile}: Is a directory` : writedFile.error;
+    //     else if (writedFile.permDenied) return `bash: ${redirectToFile}: Permission denied`;
+    //     return '';
+    // }
+    return ansiToHtml(result);
+}
+
+function parseCommand(commandString) {
+    const operands = [];
+    const flags = [];
+    let redirectToFile = null;
+    let appendMode = false;
+    const regex = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|>>|>|--[a-zA-Z0-9=_-]+|-[a-zA-Z0-9]+|\S+)/g;
+    let match;
+    let expectingRedirectTarget = false;
+    let first = true;
+    let cmdName;
+    
+    while ((match = regex.exec(commandString)) !== null) {
+        let arg = match[1];
+
+        if (first) {
+            cmdName = arg;
+            first = false;
+            continue;
+        }
+
+        if (expectingRedirectTarget) {
+            redirectToFile = arg;
+            if (arg.startsWith('"') && arg.endsWith('"')) redirectToFile = arg.substring(1, arg.length - 1);
+            else if (arg.startsWith("'") && arg.endsWith("'")) redirectToFile = arg.substring(1, arg.length - 1);
+            expectingRedirectTarget = false;
+            continue;
+        }
+
+        if (arg === '>') {
+            appendMode = false;
+            expectingRedirectTarget = true;
+            continue;
+        } else if (arg === '>>') {
+            appendMode = true;
+            expectingRedirectTarget = true;
+            continue;
+        }
+
+        if (arg.startsWith('"') && arg.endsWith('"')) operands.push(arg.substring(1, arg.length - 1));
+        else if (arg.startsWith("'") && arg.endsWith("'")) operands.push(arg.substring(1, arg.length - 1));
+        else if (arg.startsWith('--')) flags.push(arg.substring(2));
+        else if (arg.startsWith('-') && arg.length > 1) {
+            for (let i = 1; i < arg.length; i++) flags.push(arg[i]);
+        } else operands.push(arg);
+    }
+    if (expectingRedirectTarget) return { cmdName, operands, flags, redirectToFile: undefined, appendMode };
+    else return { cmdName, operands, flags, redirectToFile, appendMode };
+}
+
+async function sendCommand(activeLine, fullCommand) {
     const textCommand = fullCommand.textContent;
-    // const { cmdName, operands, flags, redirectToFile, appendMode } = parseCommand(textCommand.replace(/\\/g, "\ "));
+    const { cmdName, operands, flags, redirectToFile, appendMode } = parseCommand(textCommand.replace(/\\/g, "\ "));
     inputHistoryIndex = inputHistory.length - 1;
     inputHistory[inputHistoryIndex] = textCommand;
     inputHistory = inputHistory.filter((input, index) => input && input !== inputHistory[index - 1]);
@@ -77,8 +160,8 @@ function sendCommand(activeLine, fullCommand) {
     if (cursor) cursor.remove();
     fullCommand.textContent = textCommand;
 
-    // const executedCommand = executeCommand(cmdName, operands, flags, redirectToFile, appendMode);
-    // if (textCommand && executedCommand.length) content.innerHTML += `<span class="line">${executedCommand}</span>`;
+    const executedCommand = await executeCommand(cmdName, operands, flags, redirectToFile, appendMode);
+    if (textCommand && executedCommand.length) content.innerHTML += `<span class="line">${executedCommand}</span>`;
 
     content.innerHTML += `<span class="line active">${ansiToHtml(`\e[92muser@fedora\e[0m:\e[92m${currentPath.replace(`/home/${myUsername}`, '~')}\e[0m$`)} <span class="input"><span class="cursor"></span></span></span>`;
     location.href = '#down';

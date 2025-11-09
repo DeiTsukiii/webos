@@ -1,33 +1,23 @@
-// login/script.js
-
 const content = document.getElementById('content');
 let cursorPosition = 0;
 let inputHistory = [""];
 let inputHistoryIndex = 0;
 
-// --- GESTION DES ÉTATS COMPLEXES ---
-let currentState = 'command'; // 'command', 'username', 'password', 'authenticating'
-let storedCommand = ''; // 'login' or 'register'
+let currentState = 'command';
+let storedCommand = '';
 let storedUsername = '';
 let isBusy = false;
 
-// --- FONCTION DE CONNEXION PRINCIPALE ---
 async function sendCommand(activeLine, fullCommand) {
     if (isBusy) return;
 
     const textCommand = fullCommand.textContent.trim();
-    // ... (Votre code de gestion de l'historique) ...
-
-    // Verrouiller la ligne
     activeLine.classList.remove('active');
     const cursor = activeLine.querySelector('.cursor');
     if (cursor) cursor.remove();
     fullCommand.textContent = textCommand;
 
-    // --- MACHINE À ÉTATS ---
-
     if (currentState === 'command') {
-        // 1. L'utilisateur a tapé 'login' ou 'register'
         if (textCommand === 'login' || textCommand === 'register') {
             storedCommand = textCommand;
             currentState = 'username';
@@ -38,15 +28,12 @@ async function sendCommand(activeLine, fullCommand) {
         }
 
     } else if (currentState === 'username') {
-        // 2. L'utilisateur a tapé son nom d'utilisateur
         storedUsername = textCommand;
         currentState = 'password';
-        askFor("password: ", true); // true = password input
+        askFor("password: ", true);
 
     } else if (currentState === 'password') {
-        // 3. L'utilisateur a tapé son mot de passe
         const storedPassword = textCommand;
-        // N'affiche pas le mot de passe tapé
         const passLine = activeLine.querySelector('.password-input');
         if(passLine) passLine.textContent = ''; 
 
@@ -65,7 +52,6 @@ async function sendCommand(activeLine, fullCommand) {
     }
 }
 
-// --- FONCTION POUR AFFICHER UN NOUVEAU PROMPT ---
 function askFor(promptText, isPassword = false) {
     const inputClass = isPassword ? 'input password-input' : 'input';
     content.innerHTML += `<span class="line active">${promptText}<span class="${inputClass}"><span class="cursor"> </span></span></span>`;
@@ -73,7 +59,6 @@ function askFor(promptText, isPassword = false) {
     cursorPosition = 0;
 }
 
-// --- APPEL À L'API (Connexion) ---
 async function handleLoginAttempt(username, password) {
     try {
         const response = await fetch('/api/login', {
@@ -96,7 +81,6 @@ async function handleLoginAttempt(username, password) {
     }
 }
 
-// --- APPEL À L'API (Enregistrement) ---
 async function handleRegisterAttempt(username, password) {
     try {
         const response = await fetch('/api/register', {
@@ -109,7 +93,7 @@ async function handleRegisterAttempt(username, password) {
 
         content.innerHTML += `<span class="line green">Account created successfully!</span>`;
         content.innerHTML += `<span class="line">Please 'login' to continue.</span>`;
-        resetToCommand(); // Retourne au prompt 'login' ou 'register'
+        resetToCommand();
 
     } catch (error) {
         content.innerHTML += `<span class="line red">${error.message}</span>`;
@@ -117,7 +101,6 @@ async function handleRegisterAttempt(username, password) {
     }
 }
 
-// --- FONCTION DE RÉINITIALISATION ---
 function resetToCommand() {
     currentState = 'command';
     isBusy = false;
@@ -126,8 +109,6 @@ function resetToCommand() {
     askFor("command (login/register): ");
 }
 
-
-// --- GESTION DU CURSEUR (Inchangé) ---
 function updateCursor(command) {
     const cursor = command.querySelector('.cursor') || document.createElement('span');
     cursor.className = 'cursor';
@@ -141,7 +122,6 @@ function updateCursor(command) {
     command.appendChild(after);
 }
 
-// --- GESTION DES TOUCHES (Inchangé, mais vérifiez la partie password) ---
 function handleConsoleKeydown(event) {
     const key = event.key;
     const activeLine = document.querySelector('.line.active');
@@ -188,7 +168,6 @@ function handleConsoleKeydown(event) {
     }
 }
 
-// --- INITIALISATION (Modifiée) ---
 document.addEventListener('keydown', handleConsoleKeydown);
 content.innerHTML = '<span class="line">WebOS 1.0.0 LTS tty1</span>';
-resetToCommand(); // Démarre le processus
+resetToCommand();

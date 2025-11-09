@@ -35,17 +35,18 @@ exports.handler = async (event) => {
         const homePath = `/home/${username}`;
         
         await client.query(
-            `INSERT INTO filesystem (path, parent_path, type, perms) VALUES
-                ($1, '/home', 'd', 'rwxr-xr-x'),
-                ($2, $1, 'd', 'rwxrwxr-x'),
-                ($3, $1, 'd', 'rwxrwxr-x'),
-                ($4, $1, 'd', 'rwxrwxr-x')
+            `INSERT INTO filesystem (path, parent_path, type, perms, creator) VALUES
+                ($1, '/home', 'd', 'rwxr-xr-x', 'system'),
+                ($2, $1, 'd', 'rwxrwxr-x', $5),
+                ($3, $1, 'd', 'rwxrwxr-x', $5),
+                ($4, $1, 'd', 'rwxrwxr-x', $5)
             `,
             [
                 homePath,
                 `${homePath}/Desktop`,
                 `${homePath}/Downloads`,
-                `${homePath}/Documents`
+                `${homePath}/Documents`,
+                username
             ]
         );
 
