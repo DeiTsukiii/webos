@@ -1,0 +1,103 @@
+* {
+    margin: 0;
+    padding: 0;
+    font-family: 'Consolas', 'Lucida Console', monospace;
+}
+
+:root {
+    --white: #fffefe;
+    --white2: #cfcfcf;
+    --cyan: #33c6df;
+    --cyan2: #2ba0b3;
+    --purple: #c060ca;
+    --purple2: #a347ba;
+    --blue: #2b7bdf;
+    --blue2: #12488b;
+    --yellow: #e9ad0c;
+    --yellow2: #a2724d;
+    --green: #32d07a;
+    --green2: #27a369;
+    --red: #f66151;
+    --red2: #c01d29;
+    --black: #5c5c5d;
+    --black2: #1d1c21;
+}
+
+body {
+    background-color: var(--black2);
+    padding: 8px;
+}
+
+.content {
+    height: fit-content;
+    width: 100%;
+    color: var(--white2);
+    font-size: 1.6vh;
+}
+
+.line {
+    position: relative;
+    width: 100%;
+    display: inline-block;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.cursor {
+    display: inline-block;
+    width: 9px;
+    height: 1.15em;
+    background-color: transparent;
+    vertical-align: top;
+    animation: blink 1s step-start infinite;
+    color: var(--white2);
+}
+
+@keyframes blink {
+    50% {
+        background-color: var(--white2);
+        color: var(--black2);
+    }
+}
+
+.transparent { color: transparent; }
+
+.white { color: var(--white); }
+.white2 { color: var(--white2); }
+.bg-white { background-color: var(--white); }
+.bg-white2 { background-color: var(--white2); }
+
+.cyan { color: var(--cyan); }
+.cyan2 { color: var(--cyan2); }
+.bg-cyan { background-color: var(--cyan); }
+.bg-cyan2 { background-color: var(--cyan2); }
+
+.purple { color: var(--purple); }
+.purple2 { color: var(--purple2); }
+.bg-purple { background-color: var(--purple); }
+.bg-purple2 { background-color: var(--purple2); }
+
+.blue { color: var(--blue); }
+.blue2 { color: var(--blue2); }
+.bg-blue { background-color: var(--blue); }
+.bg-blue2 { background-color: var(--blue2); }
+
+.yellow { color: var(--yellow); }
+.yellow2 { color: var(--yellow2); }
+.bg-yellow { background-color: var(--yellow); }
+.bg-yellow2 { background-color: var(--yellow2); }
+
+.green { color: var(--green); }
+.green2 { color: var(--green2); }
+.bg-green { background-color: var(--green); }
+.bg-green2 { background-color: var(--green2); }
+
+.red { color: var(--red); }
+.red2 { color: var(--red2); }
+.bg-red { background-color: var(--red); }
+.bg-red2 { background-color: var(--red2); }
+
+.black { color: var(--black); }
+.black2 { color: var(--black2); }
+.bg-black { background-color: var(--black); }
+.bg-black2 { background-color: var(--black2); }
