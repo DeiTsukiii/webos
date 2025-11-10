@@ -107,7 +107,7 @@ function resetToCommand() {
     isBusy = false;
     storedCommand = '';
     storedUsername = '';
-    askFor("type (login/register): ");
+    askFor("command (login/register): ");
 }
 
 function updateCursor(command) {

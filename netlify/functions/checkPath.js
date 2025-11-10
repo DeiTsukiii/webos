@@ -52,7 +52,7 @@ exports.handler = async (event) => {
         if (res.rowCount === 0) {
             return {
                 statusCode: 200, 
-                body: JSON.stringify({ success: false })
+                body: JSON.stringify({ success: false, message: 'NoSuchFileOrDirectory' })
             };
         }
         const node = res.rows[0];

@@ -80,11 +80,14 @@ function resolvePath(current, target) {
     return '/' + resolvedParts.join('/');
 }
 
+const lineActive = () => `<span class="line active">${ansiToHtml(`\e[92m${myUsername}@webos\e[0m:\e[92m${currentPath.replace(`/home/${myUsername}`, '~')}\e[0m$`)} <span class="input"><span class="cursor"></span></span></span>`;
+
 function getCtx() {
     return {
         set currentPath (newPath) { currentPath = newPath; },
         get currentPath () { return currentPath; },
         myUsername,
+        lineActive,
         resolvePath: (target) => resolvePath(currentPath, target),
     };
 }
@@ -186,7 +189,7 @@ async function sendCommand(activeLine, fullCommand) {
     document.getElementById('line-wait').remove();
     if (textCommand && executedCommand.length) content.innerHTML += `<span class="line">${executedCommand}</span>`;
 
-    content.innerHTML += `<span class="line active">${ansiToHtml(`\e[92m${myUsername}@webos\e[0m:\e[92m${currentPath.replace(`/home/${myUsername}`, '~')}\e[0m$`)} <span class="input"><span class="cursor"></span></span></span>`;
+    content.innerHTML += lineActive();
     location.href = '#down';
 }
 
@@ -256,6 +259,7 @@ function handleConsoleKeydown(event) {
 }
 
 document.addEventListener('keydown', handleConsoleKeydown);
+
 initShell().then(() => {
-    content.innerHTML = `<span class="line active">${ansiToHtml(`\e[92m${myUsername}@webos\e[0m:\e[92m${currentPath.replace(`/home/${myUsername}`, '~')}\e[0m$`)} <span class="input"><span class="cursor"></span></span></span>`;
+    content.innerHTML += lineActive();
 });
