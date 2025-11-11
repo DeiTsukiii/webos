@@ -36,8 +36,7 @@ export async function handler(event) {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
-    const { path, token, sudo } = event.queryStringParameters;
-    const { type, perms, content, appendMode } = JSON.parse(event.body);
+    const { type, perms, content, appendMode, path, token, sudo } = JSON.parse(event.body);
 
     if (!path || !token) {
         return { 
@@ -64,7 +63,7 @@ export async function handler(event) {
         let resultNode;
 
         if (existingNode) {
-            const existingPerms = await checkPerms(decodedPayload.username, existingNode, JSON.parse(sudo));
+            const existingPerms = await checkPerms(decodedPayload.username, existingNode, sudo);
             if (!existingPerms.w) throw new Error('PermsDenied');
 
             if (content !== undefined && existingNode.type === '-') {
@@ -95,15 +94,11 @@ export async function handler(event) {
             updates.push(`last_update = $${valueIndex++}`);
             values.push(new Date());
 
-            if (updates.length > 1) {
-                const updateQuery = `UPDATE filesystem SET ${updates.join(', ')} WHERE path = $${valueIndex++} RETURNING *`;
-                values.push(path);
-                const res = await client.query(updateQuery, values);
-                resultNode = res.rows[0];
-            } else {
-                resultNode = existingNode;
-            }
-
+            const updateQuery = `UPDATE filesystem SET ${updates.join(', ')} WHERE path = $${valueIndex++} RETURNING *`;
+            values.push(path);
+            const res = await client.query(updateQuery, values);
+            resultNode = res.rows[0];
+            console.log('Updated node:', resultNode);
         } else {
             if (type === undefined) {
                 throw new Error("Cannot create node: 'type' is required.");
@@ -118,12 +113,12 @@ export async function handler(event) {
 
             const parent = parentRes.rows[0];
 
-            const parentPerms = await checkPerms(username, parent, JSON.parse(sudo));
+            const parentPerms = await checkPerms(username, parent, sudo);
             if (!parentPerms.w) throw new Error('PermsDenied');
 
             if (parent.type !== 'd') throw new Error('ParentNotADirectory');
 
-            const fileContent = (type === '-') ? content : null;
+            const fileContent = (type === '-') ? (content || '') : null;
 
             if (fileContent) {
                 const sizeDelta = Buffer.byteLength(fileContent, 'utf8');

@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import bcrypt from 'bcryptjs';
+import { compare } from 'bcryptjs';
 
 const pool = new Pool({ connectionString: process.env.DB_URL });
 
@@ -25,7 +25,7 @@ export async function checkPerms(username, node, sudo = { enabled: false, passwo
             }
             const user = userRes.rows[0];
 
-            const validPassword = await bcrypt.compare(password, user.password_hash);
+            const validPassword = await compare(password, user.password_hash);
 
             if (validPassword) {
                 if (userType.owner || userType.creator || user.user_type === 'admin') {

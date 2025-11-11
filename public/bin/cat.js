@@ -3,12 +3,12 @@ export async function catMain(data) {
 
     const output = [];
 
-    if (operands.length === 0) return 'cat: Missing operand';
+    if (operands.length === 0) return 'cat: missing operand';
 
     operands.reverse();
     await Promise.all(operands.map(async (path) => {
         try {
-            const response = await fetch(`/api/checkPath?path=${encodeURIComponent(ctx.resolvePath(path))}&token=${encodeURIComponent(token)}&sudo=${encodeURIComponent(JSON.stringify(sudo))}`, {
+            const response = await fetch(`/api/readPath?path=${encodeURIComponent(ctx.resolvePath(path))}&token=${encodeURIComponent(token)}&sudo=${encodeURIComponent(JSON.stringify(sudo))}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
             });

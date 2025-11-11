@@ -1,4 +1,5 @@
 # Local Netlify folder
 .netlify
 .env
+.sql
 node_modules

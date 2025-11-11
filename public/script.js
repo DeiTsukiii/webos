@@ -146,13 +146,16 @@ async function executeCommand(command, operands, flags, redirectToFile, appendMo
         const resolveRedirect = resolvePath(currentPath, redirectToFile);
         
         try {
-            const response = await fetch(`/api/writePath?path=${encodeURIComponent(resolveRedirect)}&token=${encodeURIComponent(token)}&sudo=${encodeURIComponent(JSON.stringify(sudoObject))}`, {
+            const response = await fetch('/api/writePath', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     content: result, 
                     appendMode,
-                    type: '-'
+                    type: '-',
+                    path: resolveRedirect,
+                    token,
+                    sudo: sudoObject
                 })
             });
 

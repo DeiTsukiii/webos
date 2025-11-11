@@ -11,7 +11,7 @@ export async function cdMain(data) {
 
     try {
         newPath = ctx.resolvePath(path);
-        const response = await fetch(`/api/checkPath?path=${encodeURIComponent(newPath)}&token=${encodeURIComponent(data.token)}`, {
+        const response = await fetch(`/api/readPath?path=${encodeURIComponent(newPath)}&token=${encodeURIComponent(data.token)}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         });
