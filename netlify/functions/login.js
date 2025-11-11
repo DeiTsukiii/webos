@@ -32,7 +32,7 @@ exports.handler = async (event) => {
         if (res.rowCount === 0) {
             return {
                 statusCode: 401,
-                body: JSON.stringify({ success: false, message: 'Invalid credentials.' })
+                body: JSON.stringify({ success: false, message: 'Invalid username.' })
             };
         }
 
@@ -43,7 +43,7 @@ exports.handler = async (event) => {
         if (!isMatch) {
             return {
                 statusCode: 401,
-                body: JSON.stringify({ success: false, message: 'Invalid credentials.' })
+                body: JSON.stringify({ success: false, message: 'Invalid password.' })
             };
         }
 

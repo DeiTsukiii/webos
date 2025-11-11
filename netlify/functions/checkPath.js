@@ -10,7 +10,8 @@ exports.handler = async (event) => {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
-    const { path, token, sudo } = event.queryStringParameters;
+    const { path, token } = event.queryStringParameters;
+    const sudo = event.queryStringParameters.sudo || JSON.stringify({ enabled: false });
 
     if (!token) {
         return { 
@@ -54,6 +55,7 @@ exports.handler = async (event) => {
         try {
             perms = await checkPerms(decodedPayload.username, node, JSON.parse(sudo));
         } catch (error) {
+            console.error(error);
             return {
                 statusCode: 403,
                 body: JSON.stringify({ success: false, message: error.message || 'PermsDenied', ...node })
@@ -75,7 +77,6 @@ exports.handler = async (event) => {
         };
 
     } catch (error) {
-        console.error(error);
         return { 
             statusCode: 500, 
             body: JSON.stringify({ success: false, message: 'Internal server error.' }) 

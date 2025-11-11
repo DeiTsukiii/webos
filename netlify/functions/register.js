@@ -15,14 +15,14 @@ exports.handler = async (event) => {
     try {
         const { username, password } = JSON.parse(event.body);
 
-        if (!username || !password || username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_]+$/.test(username) || password.length < 8 || !/^[a-zA-Z0-9_]+$/.test(password)) {
+        if (!username || !password || username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_-]+$/.test(username) || password.length < 8 || !/^[a-zA-Z0-9_-]+$/.test(password)) {
             const message = () => {
                 if (!username || !password) return 'Username and password are required.';
                 if (username.length < 3) return 'Username must be at least 3 characters long.';
                 if (username.length > 20) return 'Username must be at most 20 characters long.';
-                if (!/^[a-zA-Z0-9_]+$/.test(username)) return 'Username can only contain alphanumeric characters and underscores.';
+                if (!/^[a-zA-Z0-9_-]+$/.test(username)) return 'Username can only contain alphanumeric characters, underscores and hyphens.';
                 if (password.length < 8) return 'Password must be at least 8 characters long.';
-                if (!/^[a-zA-Z0-9_]+$/.test(password)) return 'Password can only contain alphanumeric characters and underscores.';
+                if (!/^[a-zA-Z0-9_-]+$/.test(password)) return 'Password can only contain alphanumeric characters, underscores and hyphens.';
                 return 'Invalid input.';
             };
 
