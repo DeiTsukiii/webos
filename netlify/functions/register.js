@@ -1,11 +1,11 @@
-const { Pool } = require('pg');
-const bcrypt = require('bcryptjs');
+import { Pool } from 'pg';
+import { genSalt, hash } from 'bcryptjs';
 
 const pool = new Pool({
     connectionString: process.env.DB_URL,
 });
 
-exports.handler = async (event) => {
+export async function handler(event) {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
@@ -34,8 +34,8 @@ exports.handler = async (event) => {
 
         await client.query('BEGIN');
 
-        const salt = await bcrypt.genSalt(10);
-        const password_hash = await bcrypt.hash(password, salt);
+        const salt = await genSalt(10);
+        const password_hash = await hash(password, salt);
 
         await client.query(
             'INSERT INTO users (username, password_hash) VALUES ($1, $2)',
@@ -88,4 +88,4 @@ exports.handler = async (event) => {
     } finally {
         client.release();
     }
-};
+}

@@ -1,6 +1,6 @@
-const { Pool } = require('pg');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+import { Pool } from 'pg';
+import { compare } from 'bcryptjs';
+import { sign } from 'jsonwebtoken';
 
 const pool = new Pool({
     connectionString: process.env.DB_URL,
@@ -12,7 +12,7 @@ if (!JWT_SECRET) {
     throw new Error('FATAL ERROR: JWT_SECRET is not defined in environment variables.');
 }
 
-exports.handler = async (event) => {
+export async function handler(event) {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
@@ -38,7 +38,7 @@ exports.handler = async (event) => {
 
         const user = res.rows[0];
 
-        const isMatch = await bcrypt.compare(password, user.password_hash);
+        const isMatch = await compare(password, user.password_hash);
 
         if (!isMatch) {
             return {
@@ -53,7 +53,7 @@ exports.handler = async (event) => {
             type: user.user_type
         };
 
-        const token = jwt.sign(
+        const token = sign(
             payload,
             JWT_SECRET,
             { expiresIn: '1h' }
@@ -79,4 +79,4 @@ exports.handler = async (event) => {
             body: JSON.stringify({ success: false, message: 'Internal server error.' })
         };
     }
-};
+}

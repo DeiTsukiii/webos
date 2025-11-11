@@ -1,8 +1,8 @@
-const jwt = require('jsonwebtoken');
+import { verify } from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-exports.handler = async (event) => {
+export async function handler(event) {
     if (event.httpMethod !== 'GET') {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
@@ -17,7 +17,7 @@ exports.handler = async (event) => {
             };
         }
 
-        const decodedPayload = jwt.verify(token, JWT_SECRET);
+        const decodedPayload = verify(token, JWT_SECRET);
 
         return {
             statusCode: 200,
@@ -37,4 +37,4 @@ exports.handler = async (event) => {
             body: JSON.stringify({ success: false, message: 'Invalid or expired token.' })
         };
     }
-};
+}

@@ -1,6 +1,6 @@
-const { Pool } = require('pg');
-const jwt = require('jsonwebtoken');
-const { checkPerms } = require('./checkPerms');
+import { Pool } from 'pg';
+import { verify } from 'jsonwebtoken';
+import { checkPerms } from './checkPerms';
 
 const pool = new Pool({ connectionString: process.env.DB_URL });
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -31,7 +31,7 @@ async function checkQuota(client, path, sizeDelta = 0) {
     }
 }
 
-exports.handler = async (event) => {
+export async function handler(event) {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
@@ -50,7 +50,7 @@ exports.handler = async (event) => {
     try {
         let decodedPayload;
         try {
-            decodedPayload = jwt.verify(token, JWT_SECRET);
+            decodedPayload = verify(token, JWT_SECRET);
         } catch (error) {
             return { statusCode: 401, body: JSON.stringify({ success: false, message: 'tokenError' }) };
         }
@@ -158,4 +158,4 @@ exports.handler = async (event) => {
     } finally {
         client.release();
     }
-};
+}
