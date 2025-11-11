@@ -1,5 +1,6 @@
 export async function cdMain(data) {
     const { flags, operands, ctx } = data;
+    let newPath = ctx.currentPath;
 
     if (operands.length === 0) {
         ctx.currentPath = `/home/${ctx.myUsername}`;
@@ -9,7 +10,7 @@ export async function cdMain(data) {
     const path = operands[0] ? operands[0] : `/home/${ctx.myUsername}`;
 
     try {
-        const newPath = ctx.resolvePath(path);
+        newPath = ctx.resolvePath(path);
         const response = await fetch(`/api/checkPath?path=${encodeURIComponent(newPath)}&token=${encodeURIComponent(data.token)}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }

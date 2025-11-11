@@ -1,5 +1,5 @@
 export async function catMain(data) {
-    const { operands, token, ctx } = data;
+    const { operands, token, ctx, sudo } = data;
 
     const output = [];
 
@@ -8,7 +8,7 @@ export async function catMain(data) {
     operands.reverse();
     await Promise.all(operands.map(async (path) => {
         try {
-            const response = await fetch(`/api/checkPath?path=${encodeURIComponent(ctx.resolvePath(path))}&token=${encodeURIComponent(token)}`, {
+            const response = await fetch(`/api/checkPath?path=${encodeURIComponent(ctx.resolvePath(path))}&token=${encodeURIComponent(token)}&sudo=${encodeURIComponent(JSON.stringify(sudo))}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
             });

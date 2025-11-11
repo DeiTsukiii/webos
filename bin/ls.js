@@ -1,5 +1,5 @@
 export async function lsMain(data) {
-    const { flags, operands, token, ctx } = data;
+    const { flags, operands, token, ctx, sudo } = data;
 
     const output = [];
 
@@ -11,7 +11,7 @@ export async function lsMain(data) {
         let result = [];
 
         try {
-            const response = await fetch(`/api/ls?path=${encodeURIComponent(ctx.resolvePath(path))}&token=${encodeURIComponent(token)}`, {
+            const response = await fetch(`/api/ls?path=${encodeURIComponent(ctx.resolvePath(path))}&token=${encodeURIComponent(token)}&sudo=${encodeURIComponent(JSON.stringify(sudo))}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -45,8 +45,8 @@ export async function lsMain(data) {
 
                 let color = '\e[97m';
                 const exe = child.perms[8] === 'x' ||
-                    ctx.myUsername === child.creator && child.perms[5] === 'x' ||
-                    child.path.startsWith(`/home/${ctx.myUsername}/`) && child.perms[2] === 'x';
+                    (ctx.myUsername === child.creator && child.perms[5] === 'x') ||
+                    ((child.path + '/').startsWith(`/home/${ctx.myUsername}/`) && child.perms[2] === 'x');
                     
                 if (child.type && child.type === 'd') color = '\e[94m';
                 else if (child.type && child.type === '-' && exe) color = '\e[92m';

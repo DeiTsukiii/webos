@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
+const { checkPerms } = require('./checkPerms');
 
 const pool = new Pool({ connectionString: process.env.DB_URL });
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -9,7 +10,7 @@ exports.handler = async (event) => {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
-    const { path, token } = event.queryStringParameters;
+    const { path, token, sudo } = event.queryStringParameters;
 
     if (!token) {
         return { 
@@ -49,18 +50,18 @@ exports.handler = async (event) => {
         }
 
         const node = nodeRes.rows[0];
+        
+        let perms;
+        try {
+            perms = await checkPerms(decodedPayload.username, node, JSON.parse(sudo));
+        } catch (error) {
+            return {
+                statusCode: 403,
+                body: JSON.stringify({ success: false, message: error.message || 'PermsDenied' })
+            };
+        }
 
-        const perms = {
-            owner: node.perms.slice(0, 3),
-            creator: node.perms.slice(3, 6),
-            other: node.perms.slice(6, 9)
-        };
-
-        let hasPerms = (path.startsWith(`/home/${decodedPayload.username}/`) && perms.owner[0] === 'r') ||
-            (node.creator === decodedPayload.username && perms.creator[0] === 'r') ||
-            perms.other[0] === 'r';
-            
-        if (!hasPerms) {
+        if (!perms.r) {
             return { 
                 statusCode: 403, 
                 body: JSON.stringify({ success: false, message: 'PermsDenied' }) 

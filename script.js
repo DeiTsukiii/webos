@@ -88,36 +88,93 @@ function getCtx() {
         get currentPath () { return currentPath; },
         myUsername,
         lineActive,
+        input,
         resolvePath: (target) => resolvePath(currentPath, target),
     };
 }
 
-async function executeCommand(command, operands, flags, redirectToFile, appendMode) {
-    const commandPath = `/bin/${command}`;
+async function input(question, secret = false) {
+    let resolveInputPromise;
+    const inputPromise = new Promise((resolve) => {
+        resolveInputPromise = resolve;
+    });
 
-    let result = `bash: ${command}: command not found...`;
+    document.getElementById('line-wait').remove();
 
-    if (commands[command]) {
-        result = await commands[command]({ operands, flags, ctx: getCtx(), token: (new URLSearchParams(window.location.search)).get('user') });
+    content.innerHTML += `<span class="line active" id="prompt-line">${question}: <span class="input"><span class="cursor"></span></span></span>`;
+    location.href = '#down';
+
+    const originSendCommand = sendCommand;
+    sendCommand = async (activeLine, fullCommand) => {
+        const inputText = fullCommand.textContent;
+        
+        activeLine.classList.remove('active');
+        const cursor = content.querySelector('.cursor');
+        if (cursor) cursor.remove();
+        fullCommand.textContent = '';
+
+        document.getElementById('prompt-line').remove();
+
+        content.innerHTML += `<span class="line">${question}: ${secret ? '' : inputText}</span>`;
+        content.innerHTML += `<span class="line active" id="line-wait"><span class="input"><span class="cursor"></span></span></span>`;
+
+        sendCommand = originSendCommand;
+        
+        resolveInputPromise(inputText);
+    };
+
+    const inputText = await inputPromise;
+
+    return inputText;
+}
+
+async function executeCommand(command, operands, flags, redirectToFile, appendMode, sudo) {
+    const token = (new URLSearchParams(window.location.search)).get('user');
+
+    let sudoObject = { enabled: sudo };
+
+    if (sudo) {
+        const password = await input(`[sudo] password for ${myUsername}`, true);
+        sudoObject = { enabled: true, password: password };
     }
 
-    // if (redirectToFile) {
-    //     const resolveRedirect = resolvePath(currentPath, redirectToFile);
-    //     const parentSplit = resolveRedirect.split('/')
-    //     parentSplit.pop();
-    //     const parentPath = parentSplit.join('/');
-    //     const readedParent = readPath(parentPath);
-    //     if (readedParent.error) return readedParent.error === 'fileNotExist' ? `bash: ${redirectToFile}: No such file or directory` : readedParent.error;
-    //     else if (readedParent.perms && readedParent.perms[0] !== 'd') return `bash: ${redirectToFile}: Not a directory`;
-    //     const writedFile = writeFile(resolveRedirect, result, appendMode ? 'w+' : 'w');
-    //     if (writedFile.error) return writedFile.error === 'notAFile' ? `bash: ${redirectToFile}: Is a directory` : writedFile.error;
-    //     else if (writedFile.permDenied) return `bash: ${redirectToFile}: Permission denied`;
-    //     return '';
-    // }
+    const result = commands[command] ?
+        await commands[command]({ operands, flags, ctx: getCtx(), token, sudo: sudoObject }) :
+        `bash: ${command}: command not found...`;
+
+    if (redirectToFile) {
+        const resolveRedirect = resolvePath(currentPath, redirectToFile);
+        
+        try {
+            const response = await fetch(`/api/writePath?path=${encodeURIComponent(resolveRedirect)}&token=${encodeURIComponent(token)}&sudo=${encodeURIComponent(JSON.stringify(sudoObject))}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content: result, 
+                    appendMode,
+                    type: '-'
+                })
+            });
+
+            const data = await response.json();
+            if (!data.success) throw new Error(data.message);
+
+        } catch (error) {
+            if (error.message === 'tokenError') window.location.href = '/login';
+            return ansiToHtml(error.message
+                .replaceAll('NoSuchFileOrDirectory', `bash: ${redirectToFile}: No such file or directory`)
+                .replaceAll('PermsDenied', `bash: ${redirectToFile}: Permission denied.`)
+                .replaceAll('ParentNotADirectory', `bash: ${redirectToFile}: Parent is not a directory.`)
+            );
+        }
+
+        return '';
+    }
     return ansiToHtml(result);
 }
 
 function parseCommand(commandString) {
+    let sudo = false;
     const operands = [];
     const flags = [];
     let redirectToFile = null;
@@ -132,8 +189,11 @@ function parseCommand(commandString) {
         let arg = match[1];
 
         if (first) {
-            cmdName = arg;
-            first = false;
+            if (arg === 'sudo') sudo = true;
+            else {
+                cmdName = arg;
+                first = false;
+            }
             continue;
         }
 
@@ -162,13 +222,13 @@ function parseCommand(commandString) {
             for (let i = 1; i < arg.length; i++) flags.push(arg[i]);
         } else operands.push(arg);
     }
-    if (expectingRedirectTarget) return { cmdName, operands, flags, redirectToFile: undefined, appendMode };
-    else return { cmdName, operands, flags, redirectToFile, appendMode };
+    if (expectingRedirectTarget) return { cmdName, operands, flags, redirectToFile: undefined, appendMode, sudo };
+    else return { cmdName, operands, flags, redirectToFile, appendMode, sudo };
 }
 
 async function sendCommand(activeLine, fullCommand) {
     const textCommand = fullCommand.textContent;
-    const { cmdName, operands, flags, redirectToFile, appendMode } = parseCommand(textCommand.replace(/\\/g, "\ "));
+    const { cmdName, operands, flags, redirectToFile, appendMode, sudo } = parseCommand(textCommand.replace(/\\/g, "\ "));
     inputHistoryIndex = inputHistory.length - 1;
     inputHistory[inputHistoryIndex] = textCommand;
     inputHistory = inputHistory.filter((input, index) => input && input !== inputHistory[index - 1]);
@@ -180,11 +240,10 @@ async function sendCommand(activeLine, fullCommand) {
     if (cursor) cursor.remove();
     fullCommand.textContent = textCommand;
 
-
     content.innerHTML += `<span class="line active" id="line-wait"><span class="input"><span class="cursor"></span></span></span>`;
     location.href = '#down';
 
-    const executedCommand = await executeCommand(cmdName, operands, flags, redirectToFile, appendMode);
+    const executedCommand = await executeCommand(cmdName, operands, flags, redirectToFile, appendMode, sudo);
 
     document.getElementById('line-wait').remove();
     if (textCommand && executedCommand.length) content.innerHTML += `<span class="line">${executedCommand}</span>`;
@@ -228,6 +287,7 @@ function handleConsoleKeydown(event) {
             updateCursor(command);
         }
     } else if (key === 'Enter') {
+        if (activeLine.id === 'line-wait') return;
         sendCommand(activeLine, command);
         cursorPosition = 0;
     } else if (event.ctrlKey && key === 'l') {

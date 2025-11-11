@@ -1,20 +1,17 @@
-// netlify/functions/checkPath.js
-
 const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
+const { checkPerms } = require('./checkPerms');
 
 const pool = new Pool({ connectionString: process.env.DB_URL });
 const JWT_SECRET = process.env.JWT_SECRET;
 
 exports.handler = async (event) => {
-    // 1. Accepter que les requêtes GET
     if (event.httpMethod !== 'GET') {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
-    const { path, token } = event.queryStringParameters;
+    const { path, token, sudo } = event.queryStringParameters;
 
-    // 2. Valider les entrées
     if (!token) {
         return { 
             statusCode: 401, 
@@ -28,7 +25,6 @@ exports.handler = async (event) => {
         };
     }
 
-    // 3. Valider le token
     let decodedPayload;
     try {
         decodedPayload = jwt.verify(token, JWT_SECRET);
@@ -39,16 +35,13 @@ exports.handler = async (event) => {
         };
     }
 
-    // --- Logique de vérification ---
     const client = await pool.connect();
     try {
-        // 4. Rechercher le chemin dans la BDD
         const res = await client.query(
             'SELECT * FROM filesystem WHERE path = $1', 
             [path]
         );
 
-        // 5. Cas : Le chemin n'successe PAS
         if (res.rowCount === 0) {
             return {
                 statusCode: 200, 
@@ -57,21 +50,21 @@ exports.handler = async (event) => {
         }
         const node = res.rows[0];
 
-        const perms = {
-            owner: node.perms.slice(0, 3),
-            creator: node.perms.slice(3, 6),
-            other: node.perms.slice(6, 9)
-        };
+        let perms;
+        try {
+            perms = await checkPerms(decodedPayload.username, node, JSON.parse(sudo));
+        } catch (error) {
+            return {
+                statusCode: 403,
+                body: JSON.stringify({ success: false, message: error.message || 'PermsDenied', ...node })
+            };
+        }
 
-        let hasPerms = (path.startsWith(`/home/${decodedPayload.username}/`) && perms.owner[0] === 'r') ||
-            (node.creator === decodedPayload.username && perms.creator[0] === 'r') ||
-            perms.other[0] === 'r';
-            
-        if (!hasPerms) {
+        if (!perms.r) {
             delete node.content;
             return { 
                 statusCode: 403, 
-                body: JSON.stringify({ success: false, message: 'PermsDenied', ...node }) 
+                body: JSON.stringify({ success: false, message: 'PermsDenied', ...node })
             };
         }
 
