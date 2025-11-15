@@ -1,8 +1,33 @@
+function escapeRegExp(string, pattern, ignoreCase, showFilenames, filename) {
+    const lines = string.split('\n');
+    const finalOutput = [];
+    
+    for (const line of lines) {
+        let lineToSearch = line;
+        let patternToSearch = pattern;
+
+        if (ignoreCase) {
+            lineToSearch = line.toLowerCase();
+            patternToSearch = pattern.toLowerCase();
+        }
+
+        if (lineToSearch.includes(patternToSearch)) {
+            if (showFilenames) {
+                finalOutput.push(`${filename}:${line}`);
+            } else {
+                finalOutput.push(line);
+            }
+        }
+    }
+
+    return finalOutput.join('\n');
+}
+
 export async function grepMain(data) {
-    const { operands, flags, ctx, token, sudo } = data;
+    const { operands, flags, ctx, token, sudo, stdin } = data;
 
     if (operands.length < 1) return 'grep: missing pattern';
-    if (operands.length < 2) return 'grep: missing file operand';
+    if (operands.length < 2 && !stdin) return 'grep: missing file operand';
 
     const pattern = operands[0];
     const files = operands.slice(1);
@@ -10,6 +35,11 @@ export async function grepMain(data) {
     const ignoreCase = flags.includes('i') || flags.includes('ignore-case');
 
     const finalOutput = [];
+
+    if (stdin) {
+        finalOutput.push(escapeRegExp(stdin, pattern, ignoreCase, false, ''));
+        return finalOutput.join('\n');
+    }
 
     await Promise.all(files.map(async filename => {
         const path = ctx.resolvePath(filename);
@@ -29,25 +59,7 @@ export async function grepMain(data) {
             }
             
             const content = data.content || '';
-            const lines = content.split('\n');
-            
-            for (const line of lines) {
-                let lineToSearch = line;
-                let patternToSearch = pattern;
-
-                if (ignoreCase) {
-                    lineToSearch = line.toLowerCase();
-                    patternToSearch = pattern.toLowerCase();
-                }
-
-                if (lineToSearch.includes(patternToSearch)) {
-                    if (showFilenames) {
-                        finalOutput.push(`${filename}:${line}`);
-                    } else {
-                        finalOutput.push(line);
-                    }
-                }
-            }
+            finalOutput.push(escapeRegExp(content, pattern, ignoreCase, showFilenames, filename));
 
         } catch (error) {
             if (error.message === 'tokenError') window.location.href = '/login';

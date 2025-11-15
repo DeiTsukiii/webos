@@ -73,7 +73,6 @@ export async function handler(event) {
             values.push(path);
             const res = await client.query(updateQuery, values);
             resultNode = res.rows[0];
-            console.log('Updated node:', resultNode);
         } else {
             if (type === undefined) {
                 throw new Error("Cannot create node: 'type' is required.");

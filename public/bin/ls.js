@@ -1,11 +1,13 @@
 export async function lsMain(data) {
-    const { flags, operands, token, ctx, sudo } = data;
+    const { flags, operands, token, ctx, sudo, stdin } = data;
 
     const output = [];
 
     const long = flags.includes('l') || flags.includes('long');
 
     const paths = operands.length ? operands : [ctx.currentPath];
+
+    if (stdin) paths.push(stdin.trim());
 
     await Promise.all(paths.map(async path => {
         let result = [];

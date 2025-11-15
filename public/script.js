@@ -6,6 +6,11 @@ let currentPath = "/home/user";
 let myUsername = "";
 let inputHistory = [""];
 let inputHistoryIndex = 0;
+const customEnv = {};
+const env = () => ({
+    USER: myUsername,
+    HOME: `/home/${myUsername}`
+});
 
 let inputType = null;
 
@@ -86,6 +91,8 @@ function getCtx() {
     return {
         set currentPath (newPath) { currentPath = newPath; },
         get currentPath () { return currentPath; },
+        get env () { return { ...env(), ...customEnv }; },
+        set env ({key, value}) { if (!Object.keys(env()).includes(key)) customEnv[key] = value; },
         myUsername,
         lineActive,
         input,
@@ -128,7 +135,7 @@ async function input(question, secret = false) {
     return inputText;
 }
 
-async function executeCommand(command, operands, flags, redirectToFile, appendMode, sudo) {
+async function executeCommand(command, operands, flags, redirectToFile, appendMode, sudo, stdin) {
     const token = (new URLSearchParams(window.location.search)).get('user');
 
     let sudoObject = { enabled: sudo };
@@ -139,7 +146,7 @@ async function executeCommand(command, operands, flags, redirectToFile, appendMo
     }
 
     const result = commands[command] ?
-        await commands[command]({ operands, flags, ctx: getCtx(), token, sudo: sudoObject }) :
+        await commands[command]({ operands, flags, ctx: getCtx(), token, sudo: sudoObject, stdin }) :
         `bash: ${command}: command not found...`;
 
     if (redirectToFile) {
@@ -164,26 +171,26 @@ async function executeCommand(command, operands, flags, redirectToFile, appendMo
 
         } catch (error) {
             if (error.message === 'tokenError') window.location.href = '/login';
-            return ansiToHtml(error.message
+            return error.message
                 .replaceAll('NoSuchFileOrDirectory', `bash: ${redirectToFile}: No such file or directory`)
                 .replaceAll('PermsDenied', `bash: ${redirectToFile}: Permission denied.`)
                 .replaceAll('ParentNotADirectory', `bash: ${redirectToFile}: Parent is not a directory.`)
-            );
+                .replaceAll('QuotaExceeded', `bash: ${redirectToFile}: Quota exceeded.`);
         }
 
         return '';
     }
-    return ansiToHtml(result);
+    return result;
 }
 
 function parseCommand(commandString) {
     const stages = [];
+    const currentEnv = { ...env(), ...customEnv };
     let currentStage = { cmdName: null, operands: [], flags: [], sudo: false };
     
     let redirectToFile = null;
     let appendMode = false;
     
-    // Regex mis à jour pour inclure '|'
     const regex = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|>>|>|\||--[a-zA-Z0-9=_-]+|-[a-zA-Z0-9]+|\S+)/g;
     let match;
     let expectingRedirectTarget = false;
@@ -193,7 +200,10 @@ function parseCommand(commandString) {
     while ((match = regex.exec(commandString)) !== null) {
         let arg = match[1];
 
-        // Gérer les redirections (qui ne s'appliquent qu'à la fin)
+        Object.entries(currentEnv).forEach(([key, value]) => {
+            arg = arg.replaceAll(`$${key}`, value);
+        });
+
         if (expectingRedirectTarget) {
             redirectToFile = arg;
             if (arg.startsWith('"') && arg.endsWith('"')) redirectToFile = arg.substring(1, arg.length - 1);
@@ -212,18 +222,15 @@ function parseCommand(commandString) {
             continue;
         }
         
-        // Gérer le PIPE
         if (arg === '|') {
             currentStage.sudo = sudo;
             stages.push(currentStage);
-            // Réinitialiser pour le prochain stage
             currentStage = { cmdName: null, operands: [], flags: [], sudo: false };
             first = true;
             sudo = false;
             continue;
         }
 
-        // Gérer le nom de la commande et sudo
         if (first) {
             if (arg === 'sudo') {
                 sudo = true;
@@ -234,17 +241,14 @@ function parseCommand(commandString) {
             continue;
         }
 
-        // Gérer les arguments
         if (arg.startsWith('"') && arg.endsWith('"')) {
-            operands.push(arg.substring(1, arg.length - 1));
+            currentStage.operands.push(arg.substring(1, arg.length - 1));
         } else if (arg.startsWith("'") && arg.endsWith("'")) {
-            operands.push(arg.substring(1, arg.length - 1));
+            currentStage.operands.push(arg.substring(1, arg.length - 1));
         } else if (arg.startsWith('--')) {
-            // CORRIGÉ : Crée un objet (ex: { 'ignore-case': true })
             const flag = arg.substring(2);
             currentStage.flags.push(flag);
         } else if (arg.startsWith('-') && arg.length > 1) {
-            // CORRIGÉ : Crée un objet (ex: { i: true })
             for (let i = 1; i < arg.length; i++) {
                 currentStage.flags.push(arg[i]);
             }
@@ -253,7 +257,6 @@ function parseCommand(commandString) {
         }
     }
     
-    // Ajouter le dernier stage
     currentStage.sudo = sudo;
     stages.push(currentStage);
 
@@ -264,27 +267,22 @@ function parseCommand(commandString) {
 async function sendCommand(activeLine, fullCommand) {
     const textCommand = fullCommand.textContent;
     
-    // 1. Parser la commande en "stages" (étapes)
     const { stages, redirectToFile, appendMode } = parseCommand(textCommand.replace(/\\/g, "\ "));
     
-    // 2. Gérer l'historique
     inputHistoryIndex = inputHistory.length - 1;
     inputHistory[inputHistoryIndex] = textCommand;
     inputHistory = inputHistory.filter((input, index) => input && input !== inputHistory[index - 1]);
     inputHistory.push("");
     inputHistoryIndex = inputHistory.length - 1;
 
-    // 3. Nettoyer la ligne active
     activeLine.classList.remove('active');
     const cursor = content.querySelector('.cursor');
     if (cursor) cursor.remove();
     fullCommand.textContent = textCommand;
 
-    // 4. Afficher la ligne d'attente
     content.innerHTML += `<span class="line active" id="line-wait"><span class="input"><span class="cursor"></span></span></span>`;
     location.href = '#down';
 
-    // 5. BOUCLE D'EXÉCUTION DES STAGES (Cœur du pipe)
     let inputForNextStage = "";
     let finalOutput = "";
 
@@ -296,11 +294,12 @@ async function sendCommand(activeLine, fullCommand) {
         const currentAppend = isLastStage ? appendMode : null;
         const executedCommand = await executeCommand(
             stage.cmdName, 
-            inputForNextStage ? [...stage.operands, inputForNextStage] : stage.operands, 
+            stage.operands, 
             stage.flags, 
             currentRedirect, 
             currentAppend, 
-            stage.sudo
+            stage.sudo,
+            inputForNextStage
         );
 
         inputForNextStage = executedCommand;
@@ -309,7 +308,7 @@ async function sendCommand(activeLine, fullCommand) {
 
     document.getElementById('line-wait').remove();
     if (textCommand && finalOutput.length > 0 && !redirectToFile) {
-        content.innerHTML += `<span class="line">${finalOutput}</span>`;
+        content.innerHTML += `<span class="line">${ansiToHtml(finalOutput)}</span>`;
     }
 
     content.innerHTML += lineActive();

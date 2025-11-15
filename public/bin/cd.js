@@ -1,13 +1,13 @@
 export async function cdMain(data) {
-    const { flags, operands, ctx } = data;
+    const { flags, operands, ctx, stdin } = data;
     let newPath = ctx.currentPath;
 
-    if (operands.length === 0) {
+    const path = operands[0] || stdin ? ctx.resolvePath(stdin ? stdin.trim() : operands[0]) : '';
+
+    if (path === '') {
         ctx.currentPath = `/home/${ctx.myUsername}`;
         return '';
     }
-
-    const path = operands[0] ? operands[0] : `/home/${ctx.myUsername}`;
 
     try {
         newPath = ctx.resolvePath(path);

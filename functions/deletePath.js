@@ -16,7 +16,7 @@ export const handler = async (event) => {
         const recursive = flags.includes('r') || flags.includes('recursive');
 
         if (!path || !token) {
-            return { 
+            return {
                 statusCode: 400, 
                 body: JSON.stringify({ success: false, message: 'path and token are required.' }) 
             };

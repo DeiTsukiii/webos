@@ -3,8 +3,10 @@ import { cdMain } from "./cd.js";
 import { chmodMain } from "./chmod.js";
 import { clearMain } from "./clear.js";
 import { cpMain } from "./cp.js";
+import { curlMain } from "./curl.js";
 import { dateMain } from "./date.js";
 import { echoMain } from "./echo.js";
+import { exportMain } from "./export.js";
 import { grepMain } from "./grep.js";
 import { helpMain } from "./help.js";
 import { lsMain } from "./ls.js";
@@ -14,6 +16,7 @@ import { passwdMain } from "./passwd.js";
 import { pwdMain } from "./pwd.js";
 import { rmMain } from "./rm.js";
 import { touchMain } from "./touch.js";
+import { wcMain } from "./wc.js";
 import { whoamiMain } from "./whoami.js";
 
 export const commands = {
@@ -33,5 +36,8 @@ export const commands = {
     chmod: chmodMain,
     cp: cpMain,
     passwd: passwdMain,
-    grep: grepMain
+    grep: grepMain,
+    wc: wcMain,
+    export: exportMain,
+    curl: curlMain
 }
