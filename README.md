@@ -14,11 +14,11 @@ It features a transactional backend (using Node.js on Netlify Functions and a Po
 * **Virtual File System:** A complete filesystem stored in a database. All file operations (`ls`, `rm`, `mv`, `cp`, `mkdir`, `touch`) are real, persistent, and transactional.
 * **Unix Permissions System:**
     * **Permissions:** Full `chmod` support (using both numeric `755` and string `rwxr-xr-x` formats).
-    * **Privilege Escalation:** A working `sudo` command that validates the user's password for protected operations.
+    * **Privilege Escalation:** A working `sudo` command (not listed in `help`) that validates passwords for protected operations.
 * **Resource Management:**
     * **Storage Quotas:** Each user is limited to a **5MB quota** in their home directory to prevent abuse.
 * **Powerful Shell Functionality:**
-    * **Pipes (`|`)**: The shell correctly handles pipes, allowing the output of one command to be used as the input for the next (e.g., `ls | wc -l`).
+    * **Pipes (`|`)**: The shell correctly handles pipes, allowing the output of one command to be used as the input for the next (e.g., `ls /home | wc -l`).
     * **I/O Redirection (`>`, `>>`):** Output can be redirected and appended to files.
 
 ## Available Commands
@@ -27,27 +27,30 @@ This is a list of all built-in commands currently available in the WebOS shell.
 
 | **Command** | **Description** | **Example** |
 | :--- | :--- | :--- |
-| **Filesystem** | | |
+| **Filesystem & Navigation** | | |
 | `ls` | Lists files and directories with permissions. | `ls -l /home` |
-| `cat` | Displays the content of a file. | `cat /home/deitsuki/readme.txt` |
-| `rm` | Removes files. Supports `-r` for directories. | `rm -r old_folder` |
-| `mv` | Moves or renames a file or directory. | `mv file.txt docs/file.txt` |
-| `cp` | Copies files. Supports `-r` for directories. | `cp -r project/ project_backup/` |
-| `mkdir` | Creates a new directory. | `mkdir my_project` |
+| `cd` | Changes the current working directory. | `cd /home/deitsuki` |
+| `pwd` | Prints the current working directory. | `pwd` |
+| `cat` | Displays the content of a file. | `cat readme.txt` |
 | `touch` | Creates a new empty file. | `touch new_file.js` |
-| **Permissions** | | |
+| `mkdir` | Creates a new directory. | `mkdir my_project` |
+| `rm` | Removes files. Supports `-r` for directories. | `rm -r old_folder` |
+| `mv` | Moves or renames a file or directory. | `mv file.txt docs/` |
+| `cp` | Copies files. Supports `-r` for directories. | `cp -r project/ backup/` |
 | `chmod` | Changes the permissions of a file. | `chmod 755 script.js` |
-| `sudo` | Executes a command as the superuser. | `sudo rm /etc/config` |
-| **User** | | |
+| **User & Session** | | |
 | `passwd` | Changes your own user password. | `passwd` |
 | `whoami` | Displays your current username. | `whoami` |
+| `export` | Sets an environment variable (simulated). | `export VAR=value` |
 | **Utilities** | | |
-| `grep` | Searches for a pattern in a file or input. | `ls \| grep ".js"` |
-| `wc` | Counts lines, words, and bytes (`-l`, `-w`, `-c`). | `cat file.txt \| wc -l` |
+| `echo` | Prints text to the terminal. | `echo "Hello" > file.txt` |
+| `clear` | Clears the terminal screen. | `clear` |
 | `date` | Displays the current date and time. | `date` |
 | `help` | Lists all available commands. | `help` |
-| `echo` | Prints text to the terminal (used for redirection). | `echo "Hello" > file.txt` |
-| `clear` | Clears the terminal screen. | `clear` |
+| `grep` | Searches for a pattern in a file or input. | `ls \| grep ".js"` |
+| `wc` | Counts lines, words, and bytes (`-l`, `-w`, `-c`). | `cat file.txt \| wc -l` |
+| `curl` | Fetches content from a URL (simulated). | `curl https://...` |
+| `neofetch` | Displays system information and quota. | `neofetch` |
 
 ## Tech Stack
 
