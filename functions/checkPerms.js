@@ -29,7 +29,7 @@ export async function checkPerms(username, node, sudo = { enabled: false, passwo
 
             if (validPassword) {
                 if (userType.owner || userType.creator || user.user_type === 'admin') {
-                    return { r: true, w: true, x: true };
+                    return { r: true, w: true, x: true, sudo: true };
                 }
 
                 throw new Error('sudo: User is not in the sudoers file.');
@@ -64,6 +64,7 @@ export async function checkPerms(username, node, sudo = { enabled: false, passwo
     return {
         r: hasReadPerms,
         w: hasWritePerms,
-        x: hasExecutePerms
+        x: hasExecutePerms,
+        sudo: false
     };
 }

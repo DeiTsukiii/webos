@@ -21,11 +21,10 @@ export async function mvMain(data) {
 
     } catch (error) {
         if (error.message === 'tokenError') window.location.href = '/login';
-        return `mv: ${error.message
+        return error.message
             .replaceAll('NoSuchFileOrDirectory', 'mv: No such file or directory')
             .replaceAll('PermsDenied', 'mv: Permission denied')
-            .replaceAll('InvalidDestination', 'mv: Invalid destination')
-        }`;
+            .replaceAll('InvalidDestination', 'mv: Invalid destination');
     }
 
     return '';

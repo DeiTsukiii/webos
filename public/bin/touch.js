@@ -19,11 +19,11 @@ export async function touchMain(data) {
 
         } catch (error) {
             if (error.message === 'tokenError') window.location.href = '/login';
-            return ansiToHtml(error.message
+            results.push(error.message
                 .replaceAll('NoSuchFileOrDirectory', `touch: cannot touch '${path}': No such file or directory`)
                 .replaceAll('ParentNotADirectory', `touch: cannot touch '${path}': Not a directory`)
                 .replaceAll('PermsDenied', `touch: cannot touch '${path}': Permission denied`)
-            )
+            );
         }
     }));
 
