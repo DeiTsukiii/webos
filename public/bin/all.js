@@ -12,6 +12,7 @@ import { helpMain } from "./help.js";
 import { lsMain } from "./ls.js";
 import { mkdirMain } from "./mkdir.js";
 import { mvMain } from "./mv.js";
+import { neofetchMain } from "./neofetch.js";
 import { passwdMain } from "./passwd.js";
 import { pwdMain } from "./pwd.js";
 import { rmMain } from "./rm.js";
@@ -39,5 +40,6 @@ export const commands = {
     grep: grepMain,
     wc: wcMain,
     export: exportMain,
-    curl: curlMain
+    curl: curlMain,
+    neofetch: neofetchMain,
 }
