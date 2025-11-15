@@ -46,7 +46,7 @@ export async function handler(event) {
         
         await client.query(
             `INSERT INTO filesystem (path, parent_path, type, perms, creator) VALUES
-                ($1, '/home', 'd', 'rwxr-xr-x', 'system'),
+                ($1, '/home', 'd', 'rwxr-xr-x', 'root'),
                 ($2, $1, 'd', 'rwxrwxr-x', $5),
                 ($3, $1, 'd', 'rwxrwxr-x', $5),
                 ($4, $1, 'd', 'rwxrwxr-x', $5)
